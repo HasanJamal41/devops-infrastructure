@@ -1,0 +1,61 @@
+version: '3.10'
+services:
+  frontend:
+    image: hasanjamal41/devops-end-to-end-frontend  # Updated image name
+    expose:
+      - "3000"  # Expose the port internally without publishing it externally
+    env_file:
+      - ./frontend/.env
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+  backend:
+    image: hasanjamal41/devops-end-to-end-backend  # Updated image name
+    expose:
+      - "5000"  # Expose the port internally without publishing it externally
+    env_file:
+      - ./backend/.env
+    networks:
+      - app-network
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: mydb
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
+    expose:
+      - "3306"  # Expose the port internally without publishing it externally
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"  # Exposing Nginx on port 80 for external traffic
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf  # Mounting Nginx configuration
+    networks:
+      - app-network
+    deploy:
+      placement:
+        constraints: []
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
+    driver: overlay  # Overlay network for Docker Swarm
+    attachable: true
+

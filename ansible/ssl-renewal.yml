@@ -45,7 +45,3 @@
         content: |
           #!/bin/bash
           docker service update --force {{ nginx_service }}
-
-    - name: Verify Nginx configuration
-      command: nginx -t
-      changed_when: false

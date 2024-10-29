@@ -1,0 +1,5 @@
+---
+domain: hasanjamal.online
+email: hatafhasan95@gmail.com
+nginx_service: devops-end-to-end_nginx
+app_path: /opt/devops-app

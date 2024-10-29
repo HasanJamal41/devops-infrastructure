@@ -1,0 +1,51 @@
+
+- name: SSL Certificate Renewal and Nginx Configuration
+  hosts: swarm_manager
+  become: yes
+  vars:
+    domain: hasanjamal.online
+    email: hatafhasan95@gmail.com
+    nginx_service: devops-end-to-end_nginx
+    app_path: /opt/devops-app
+
+  tasks:
+    - name: Ensure Certbot is installed
+      apt:
+        name: 
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        update_cache: yes
+
+    - name: Check if certificate exists
+      stat:
+        path: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+      register: cert_file
+
+    - name: Obtain or renew SSL certificate
+      command: >
+        certbot certonly --nginx 
+        -d {{ domain }}
+        --email {{ email }}
+        --agree-tos
+        --non-interactive
+        --post-hook "docker service update --force {{ nginx_service }}"
+      when: not cert_file.stat.exists
+
+    - name: Set up automatic renewal
+      cron:
+        name: "SSL renewal cron job"
+        job: "certbot renew --quiet --post-hook 'docker service update --force {{ nginx_service }}'"
+        special_time: daily
+
+    - name: Create renewal-hook script
+      copy:
+        dest: /etc/letsencrypt/renewal-hooks/post/update-nginx.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          docker service update --force {{ nginx_service }}
+
+    - name: Verify Nginx configuration
+      command: nginx -t
+      changed_when: false
